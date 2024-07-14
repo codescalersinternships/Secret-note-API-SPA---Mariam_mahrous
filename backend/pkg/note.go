@@ -4,16 +4,18 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 type Note struct {
-	gorm.Model
-	UniqueUrl uuid.UUID
-	Title string 
-	Content  string 
-	ExpirationDate string 
-	CurrentViews int 
-	MaxViews int 
+    gorm.Model
+    UniqueUrl       uuid.UUID `json:"unique_url"`
+    Title           string    `json:"title"`
+    Content         string    `json:"content"`
+    ExpirationDate  string    `json:"expiration_date"`
+    CurrentViews    int       `json:"current_views"`
+    MaxViews        int       `json:"max_views"`
 }
 
 func (n Note) String() string {
@@ -23,26 +25,34 @@ func (n Note) String() string {
 
 // should make el maxviews w el expiry date option w a have defult values
 // remove panic bardo
-func CreateNote(title , content , expirationDate string , maxViews int , database *gorm.DB) Note{
-	newNote := Note{
-		UniqueUrl:      uuid.New(),
-		Title:          title,
-		Content:        content,
-		ExpirationDate: expirationDate,
-		CurrentViews:   0,
-		MaxViews:       maxViews,
+func CreateNote(c *gin.Context) {
+	if c.Request.Method == "POST" {
+		var newNote Note
+		if err := c.BindJSON(&newNote); err != nil {
+			return
+		}
+		database:= GetDatabaseSingelton().GetDatabase()
+		if res:= database.Create(&newNote)  ; res.Error!= nil {
+			panic(res.Error)
+		}
+		c.IndentedJSON(http.StatusOK, newNote)
+	} else {
+		c.String(http.StatusMethodNotAllowed, "Method not allowed")
 	}
-	if res:= database.Create(&newNote)  ; res.Error!= nil {
-		panic(res.Error)
-	}
-	return newNote
 }
 
-//bygbly awl wa7da fy we4o lw mala2a4 el ana 3yza
-func GetNoteByUuid(uuid uuid.UUID , database *gorm.DB) Note{
-	targetNote := Note{UniqueUrl: uuid}
-	if res:= database.Find(&targetNote) ; res.Error!= nil {
-		panic(res.Error)
+
+
+func GetNoteByUuid(c *gin.Context) {
+	if c.Request.Method == "GET" {
+		uuid , _ := uuid.Parse(c.Param("uuid"))
+		response := Note{UniqueUrl: uuid}
+		database:= GetDatabaseSingelton().GetDatabase()
+		if res:= database.Find(&response) ; res.Error!= nil {
+			panic(res.Error)
+		}
+		c.IndentedJSON(http.StatusOK, response)
+	} else {
+		c.String(http.StatusMethodNotAllowed, "Method not allowed")
 	}
-	return targetNote
 }
