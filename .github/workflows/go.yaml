@@ -24,4 +24,4 @@ jobs:
       uses: golangci/golangci-lint-action@v3
 
     - name: Build
-      run: go build -o server backend/server/server.go 
+      run: go build -o server backend/cmd/main.go
