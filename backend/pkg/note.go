@@ -18,6 +18,7 @@ type Note struct {
 	ExpirationDate string    `json:"expiration_date"`
 	CurrentViews   int       `json:"current_views"`
 	MaxViews       int       `json:"max_views"`
+	Email          string    `json:"email"`
 }
 
 func (n Note) String() string {
@@ -32,6 +33,13 @@ func CreateNote(c *gin.Context) {
 		}
 		database := GetDatabaseSingelton().GetDatabase()
 		newNote.UniqueUrl = uuid.New()
+		email, _ := c.Get("email")
+		var ok bool
+		newNote.Email = email.(string)
+		fmt.Println(email)
+		if !ok {
+			c.IndentedJSON(http.StatusUnauthorized, "Note can't be created")
+		}
 		if newNote.ExpirationDate == "" {
 			newNote.ExpirationDate = time.Now().AddDate(0, 3, 0).Format("2006-01-02")
 		}
@@ -71,6 +79,24 @@ func GetNoteByUuid(c *gin.Context) {
 		}
 		database.Save(&response)
 		c.IndentedJSON(http.StatusOK, response)
+	} else {
+		c.String(http.StatusMethodNotAllowed, "Method not allowed")
+	}
+}
+
+func GetUserNotes(c *gin.Context) {
+	if c.Request.Method == "GET" {
+
+		database := GetDatabaseSingelton().GetDatabase()
+		email, _ := c.Get("email")
+
+		var notes []Note
+		if err := database.Where("Email = ?", email).Find(&notes).Error; err != nil {
+			c.JSON(http.StatusNotFound, "Notes not found")
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"notes": notes})
 	} else {
 		c.String(http.StatusMethodNotAllowed, "Method not allowed")
 	}

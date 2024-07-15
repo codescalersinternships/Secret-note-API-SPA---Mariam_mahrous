@@ -48,7 +48,7 @@ func (s *DatabaseSingleton) SetDatabase() error {
 			return fmt.Errorf("failed to connect to Sqlite database: %v", dbErr.Error())
 		}
 	}
-	dbErr = database.database.AutoMigrate(&Note{})
+	dbErr = database.database.AutoMigrate(&Note{}, &User{})
 	if dbErr != nil {
 		return fmt.Errorf("failed to migrate to database: %v", dbErr.Error())
 	}
