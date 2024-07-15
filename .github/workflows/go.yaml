@@ -21,7 +21,6 @@ jobs:
       run: cd backend && make test
 
     - name: Run Go-linter
-      run: cd backend
       uses: golangci/golangci-lint-action@v3
 
     - name: Build
