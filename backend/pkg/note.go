@@ -2,10 +2,11 @@ package db
 
 import (
 	"fmt"
+	"net/http"
+	"time"
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
-	"github.com/gin-gonic/gin"
-	"net/http"
 )
 
 type Note struct {
@@ -23,8 +24,6 @@ func (n Note) String() string {
 }
 
 
-// should make el maxviews w el expiry date option w a have defult values
-// remove panic bardo
 func CreateNote(c *gin.Context) {
 	if c.Request.Method == "POST" {
 		var newNote Note
@@ -32,8 +31,16 @@ func CreateNote(c *gin.Context) {
 			return
 		}
 		database:= GetDatabaseSingelton().GetDatabase()
+		newNote.UniqueUrl = uuid.New()
+		if newNote.ExpirationDate=="" {
+			newNote.ExpirationDate=time.Now().AddDate(0,3,0).Format("2006-01-02")
+		} 
+		if newNote.MaxViews==0 {
+			newNote.MaxViews=100
+		}
 		if res:= database.Create(&newNote)  ; res.Error!= nil {
-			panic(res.Error)
+			c.IndentedJSON(http.StatusConflict,  "Note can't be created")
+			return
 		}
 		c.IndentedJSON(http.StatusOK, newNote)
 	} else {
@@ -45,12 +52,26 @@ func CreateNote(c *gin.Context) {
 
 func GetNoteByUuid(c *gin.Context) {
 	if c.Request.Method == "GET" {
+		database:= GetDatabaseSingelton().GetDatabase()
 		uuid , _ := uuid.Parse(c.Param("uuid"))
 		response := Note{UniqueUrl: uuid}
-		database:= GetDatabaseSingelton().GetDatabase()
+
 		if res:= database.Find(&response) ; res.Error!= nil {
-			panic(res.Error)
+			c.IndentedJSON(http.StatusNotFound,  "Note not found")
+			return
+		} else if response.ExpirationDate < time.Now().Format("2006-01-02") {
+			database.Delete(&response)
+			c.IndentedJSON(http.StatusOK,  "Note Expired")
+			return
 		}
+		
+		response.CurrentViews++
+        if response.CurrentViews >= response.MaxViews {
+            database.Delete(&response)
+			c.IndentedJSON(http.StatusOK,  "Max views reached")
+			return
+        } 
+        database.Save(&response)
 		c.IndentedJSON(http.StatusOK, response)
 	} else {
 		c.String(http.StatusMethodNotAllowed, "Method not allowed")
