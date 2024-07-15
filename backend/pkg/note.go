@@ -4,25 +4,25 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type Note struct {
-    gorm.Model
-    UniqueUrl       uuid.UUID `json:"unique_url"`
-    Title           string    `json:"title"`
-    Content         string    `json:"content"`
-    ExpirationDate  string    `json:"expiration_date"`
-    CurrentViews    int       `json:"current_views"`
-    MaxViews        int       `json:"max_views"`
+	gorm.Model
+	UniqueUrl      uuid.UUID `json:"unique_url"`
+	Title          string    `json:"title"`
+	Content        string    `json:"content"`
+	ExpirationDate string    `json:"expiration_date"`
+	CurrentViews   int       `json:"current_views"`
+	MaxViews       int       `json:"max_views"`
 }
 
 func (n Note) String() string {
-	return fmt.Sprintf("Note title: %s , content: %s, expiration_date: %s , uuid : %s" , n.Title , n.Content , n.ExpirationDate , n.UniqueUrl)
+	return fmt.Sprintf("Note title: %s , content: %s, expiration_date: %s , uuid : %s", n.Title, n.Content, n.ExpirationDate, n.UniqueUrl)
 }
-
 
 func CreateNote(c *gin.Context) {
 	if c.Request.Method == "POST" {
@@ -30,16 +30,16 @@ func CreateNote(c *gin.Context) {
 		if err := c.BindJSON(&newNote); err != nil {
 			return
 		}
-		database:= GetDatabaseSingelton().GetDatabase()
+		database := GetDatabaseSingelton().GetDatabase()
 		newNote.UniqueUrl = uuid.New()
-		if newNote.ExpirationDate=="" {
-			newNote.ExpirationDate=time.Now().AddDate(0,3,0).Format("2006-01-02")
-		} 
-		if newNote.MaxViews==0 {
-			newNote.MaxViews=100
+		if newNote.ExpirationDate == "" {
+			newNote.ExpirationDate = time.Now().AddDate(0, 3, 0).Format("2006-01-02")
 		}
-		if res:= database.Create(&newNote)  ; res.Error!= nil {
-			c.IndentedJSON(http.StatusConflict,  "Note can't be created")
+		if newNote.MaxViews == 0 {
+			newNote.MaxViews = 100
+		}
+		if res := database.Create(&newNote); res.Error != nil {
+			c.IndentedJSON(http.StatusConflict, "Note can't be created")
 			return
 		}
 		c.IndentedJSON(http.StatusOK, newNote)
@@ -48,30 +48,28 @@ func CreateNote(c *gin.Context) {
 	}
 }
 
-
-
 func GetNoteByUuid(c *gin.Context) {
 	if c.Request.Method == "GET" {
-		database:= GetDatabaseSingelton().GetDatabase()
-		uuid , _ := uuid.Parse(c.Param("uuid"))
+		database := GetDatabaseSingelton().GetDatabase()
+		uuid, _ := uuid.Parse(c.Param("uuid"))
 		response := Note{UniqueUrl: uuid}
 
-		if res:= database.Find(&response) ; res.Error!= nil {
-			c.IndentedJSON(http.StatusNotFound,  "Note not found")
+		if res := database.Find(&response); res.Error != nil {
+			c.IndentedJSON(http.StatusNotFound, "Note not found")
 			return
 		} else if response.ExpirationDate < time.Now().Format("2006-01-02") {
 			database.Delete(&response)
-			c.IndentedJSON(http.StatusOK,  "Note Expired")
+			c.IndentedJSON(http.StatusOK, "Note Expired")
 			return
 		}
-		
+
 		response.CurrentViews++
-        if response.CurrentViews >= response.MaxViews {
-            database.Delete(&response)
-			c.IndentedJSON(http.StatusOK,  "Max views reached")
+		if response.CurrentViews >= response.MaxViews {
+			database.Delete(&response)
+			c.IndentedJSON(http.StatusOK, "Max views reached")
 			return
-        } 
-        database.Save(&response)
+		}
+		database.Save(&response)
 		c.IndentedJSON(http.StatusOK, response)
 	} else {
 		c.String(http.StatusMethodNotAllowed, "Method not allowed")

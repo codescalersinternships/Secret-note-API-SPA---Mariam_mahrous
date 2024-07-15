@@ -1,11 +1,14 @@
 package db
 
 import (
-	"github.com/joho/godotenv"
+	"errors"
+	"fmt"
 	"os"
-	"gorm.io/gorm"
-	"gorm.io/driver/sqlite"
+
+	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
 type DatabaseSingleton struct {
@@ -15,27 +18,39 @@ type DatabaseSingleton struct {
 var database *DatabaseSingleton
 
 func GetDatabaseSingelton() *DatabaseSingleton {
-    if database == nil {
-        database = &DatabaseSingleton{database: nil}
-    }
-    return database
+	if database == nil {
+		database = &DatabaseSingleton{database: nil}
+	}
+	return database
 }
 
 func (s *DatabaseSingleton) GetDatabase() *gorm.DB {
-    return s.database
+	return s.database
 }
 
-func (s * DatabaseSingleton) SetDatabase() {
+func (s *DatabaseSingleton) SetDatabase() error {
 	err := godotenv.Load(".env")
 	if err != nil {
-		 panic(err.Error()) 
+		return errors.New("error loading .env")
 	}
 
 	db := os.Getenv("DATABASE")
-	if db =="POSTGRESQL"{
+	var dbErr error
+	if db == "POSTGRESQL" {
 		dsn := "host=localhost user=postgres password=123456 dbname=postgres port=5432"
-		s.database, _ = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+		s.database, dbErr = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+		if dbErr != nil {
+			return fmt.Errorf("failed to connect to PostgreSQL database: %v", dbErr.Error())
+		}
 	} else {
-		s.database, _= gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+		s.database, dbErr = gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+		if dbErr != nil {
+			return fmt.Errorf("failed to connect to Sqlite database: %v", dbErr.Error())
+		}
 	}
+	dbErr = database.database.AutoMigrate(&Note{})
+	if dbErr != nil {
+		return fmt.Errorf("failed to migrate to database: %v", dbErr.Error())
+	}
+	return nil
 }
