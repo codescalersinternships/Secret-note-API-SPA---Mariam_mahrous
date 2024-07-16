@@ -2,29 +2,41 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"os"
 
-	"github.com/codescalersinternships/Secret-note-API-SPA-Mariam_mahrous/middleware"
+	"github.com/codescalersinternships/Secret-note-API-SPA-Mariam_mahrous/routes"
+
 	database "github.com/codescalersinternships/Secret-note-API-SPA-Mariam_mahrous/pkg"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
+
+
+
 func main() {
-	err := database.GetDatabaseSingelton().SetDatabase()
+
+	err := godotenv.Load(".env")
 	if err != nil {
-		log.Fatal(err)
+		//ADD SLOG HENA
+		fmt.Println("error loading .env")
 	}
+	port := os.Getenv("PORT")
+	//databaseType := os.Getenv("DATABASE")
+
+
+	err = database.GetDatabaseSingelton().SetDatabase()
+	if err != nil {
+		fmt.Println("error accessing database")
+	}
+	
 
 	router := gin.Default()
-	router.GET("/note/:uuid", database.GetNoteByUuid)
-	router.GET("/note", middleware.RequireAuth, database.GetUserNotes)
-	router.POST("/note/create", middleware.RequireAuth, database.CreateNote)
-	router.POST("/signup", database.SignUp)
-	router.POST("/login", database.Login)
-	router.GET("/validate", middleware.RequireAuth, database.Validate)
-	err = router.Run(":8000")
+	routes.Routes(router)
+
+	err = router.Run(":" + port)
 	if err != nil {
-		fmt.Printf("an error occured")
+		fmt.Println("an error occured connecting to the database")
 	}
-	fmt.Printf("server running on port 8000")
+	fmt.Printf("server running on port: %v" , port)
 }
