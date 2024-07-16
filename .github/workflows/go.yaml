@@ -8,7 +8,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-      run: cd backend
 
     - name: Set up Go
       uses: actions/setup-go@v4

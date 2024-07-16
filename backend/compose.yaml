@@ -1,5 +1,4 @@
 version: '3'
-
 services:
     db:
         image: postgres
@@ -8,8 +7,19 @@ services:
             - POSTGRES_PORT=${POSTGRESQL_PORT}
             - POSTGRES_USER=${USER}  
             - POSTGRES_PASSWORD=${PASSWORD}
-            - POSTGRES_DB=${POSTGRESQL_PORT}
+            - POSTGRES_DB=${DBNAME}
 
         ports:
-            - "${POSTGRESQL_PORT}:5342"
+            - "${POSTGRESQL_PORT}:${POSTGRESQL_PORT}"
         network_mode: "host"
+    
+    backend:
+        build: 
+            dockerfile: Dockerfile
+        image: secretnote-be
+        ports:
+            - "${PORT}:${PORT}"
+        depends_on:
+            - db
+        env_file:
+            - .env
