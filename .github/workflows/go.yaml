@@ -22,6 +22,8 @@ jobs:
 
     - name: Run Go-linter
       uses: golangci/golangci-lint-action@v3
+      with:
+        working-directory: './backend'
 
     - name: Build
       run: go build -o server backend/cmd/main.go
