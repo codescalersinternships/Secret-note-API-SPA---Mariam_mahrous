@@ -23,6 +23,12 @@ func main() {
 		DBName:       os.Getenv("DBNAME"),
 		Port:         os.Getenv("POSTGRESQL_PORT"),
 	}
-	a := app.NewApp(dbConfig)
-	a.Run(port)
+	a, err := app.NewApp(dbConfig)
+	if err != nil {
+		fmt.Println("error in config")
+	}
+	err = a.Run(port)
+	if err != nil {
+		fmt.Println("error running server")
+	}
 }

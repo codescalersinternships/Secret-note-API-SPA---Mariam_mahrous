@@ -1,9 +1,7 @@
-1-  Error handling 
-2- el middleware msh el mafrod eno fy hagat el claims dy 
-3- unit tests 
-4- docker file
-5- swagger
-6- status code checking
-7- check postgres msh rady y connect faga2a leh 
+1- el middleware msh el mafrod eno fy hagat el claims dy 
+2- unit tests 
+3- docker file
+4- swagger
+5- check postgres msh rady y connect faga2a leh 
 
 

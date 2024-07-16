@@ -1,6 +1,7 @@
 package app
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -30,7 +31,7 @@ type ConfigDB struct {
 	Port         string
 }
 
-func NewDB(configdb ConfigDB) *DB {
+func NewDB(configdb ConfigDB) (*DB, error) {
 	db := &DB{
 		host:     configdb.Host,
 		user:     configdb.User,
@@ -38,8 +39,11 @@ func NewDB(configdb ConfigDB) *DB {
 		dbname:   configdb.DBName,
 		port:     configdb.Port,
 	}
-	db.SetDatabase(configdb.DatabaseType)
-	return db
+	err := db.SetDatabase(configdb.DatabaseType)
+	if err != nil {
+		return nil, err
+	}
+	return db, nil
 }
 
 func (s *DB) SetDatabase(databaseType string) error {
@@ -63,35 +67,35 @@ func (s *DB) SetDatabase(databaseType string) error {
 	return nil
 }
 
-func (s *DB) GetNoteByUuid(uuid uuid.UUID) (model.Note, int) {
+func (s *DB) GetNoteByUuid(uuid uuid.UUID) (model.Note, int, error) {
 	note := model.Note{UniqueUrl: uuid}
 
 	if res := s.database.Find(&note); res.Error != nil {
-		return note, http.StatusNotFound
+		return note, http.StatusNotFound, errors.New("not found")
 
 	} else if note.ExpirationDate < time.Now().Format("2006-01-02") {
 		s.database.Delete(&note)
-		return note, http.StatusNotFound
+		return note, http.StatusNotFound, errors.New("expired note")
 	}
 
 	note.CurrentViews++
 	if note.CurrentViews >= note.MaxViews {
 		s.database.Delete(&note)
-		return note, http.StatusOK
+		return note, http.StatusOK, nil
 	}
 	s.database.Save(&note)
-	return note, http.StatusOK
+	return note, http.StatusOK, nil
 }
 
-func (s *DB) GetAllNotes(id uint) ([]model.Note, int) {
+func (s *DB) GetAllNotes(id uint) ([]model.Note, int, error) {
 	var notes []model.Note
 	if err := s.database.Where("user_id = ?", id).Find(&notes).Error; err != nil {
-		return notes, http.StatusNotFound
+		return notes, http.StatusNotFound, errors.New("not found")
 	}
-	return notes, http.StatusOK
+	return notes, http.StatusOK, nil
 }
 
-func (s *DB) CreateNote(id uint, newNote model.Note) (model.Note, int) {
+func (s *DB) CreateNote(id uint, newNote model.Note) (model.Note, int, error) {
 	newNote.UniqueUrl = uuid.New()
 	newNote.UserID = id
 	if newNote.ExpirationDate == "" {
@@ -101,9 +105,9 @@ func (s *DB) CreateNote(id uint, newNote model.Note) (model.Note, int) {
 		newNote.MaxViews = 100
 	}
 	if res := s.database.Create(&newNote); res.Error != nil {
-		return newNote, http.StatusConflict
+		return newNote, http.StatusConflict, errors.New("cannot create a new note")
 	}
-	return newNote, http.StatusOK
+	return newNote, http.StatusOK, nil
 }
 
 func (s *DB) VerifyUser(email any) (bool, model.User) {
@@ -121,15 +125,15 @@ func (s *DB) GetUser(email string) (model.User, bool) {
 	return user, true
 }
 
-func (s *DB) SignUp(newUser model.User) int {
+func (s *DB) SignUp(newUser model.User) (int, error) {
 	result := s.database.Where("email = ?", newUser.Email).First(&model.User{})
 	if result.Error == nil {
-		return http.StatusInternalServerError
+		return http.StatusConflict, errors.New("user already exists")
 	}
 
 	if res := s.database.Create(&newUser); res.Error != nil {
-		return http.StatusConflict
+		return http.StatusConflict, errors.New("cannpt create user")
 	}
-	return http.StatusOK
+	return http.StatusOK, nil
 
 }

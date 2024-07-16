@@ -1,8 +1,6 @@
 package model
 
 import (
-	"log"
-
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -14,10 +12,10 @@ type User struct {
 	Token    string `json:"token"`
 }
 
-func HashPassword(password string) string {
+func HashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
 	if err != nil {
-		log.Panic(err)
+		return "", err
 	}
-	return string(bytes)
+	return string(bytes), nil
 }

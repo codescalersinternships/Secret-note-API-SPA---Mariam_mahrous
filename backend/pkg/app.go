@@ -17,44 +17,53 @@ type App struct {
 	DB DB
 }
 
-func NewApp(db ConfigDB) *App {
-	return &App{R: gin.Default(), DB: *NewDB(db)}
+func NewApp(db ConfigDB) (*App, error) {
+	database, err := NewDB(db)
+	if err != nil {
+		return &App{R: gin.Default(), DB: *database}, err
+	}
+	return &App{R: gin.Default(), DB: *database}, nil
 }
 
 func (a *App) RegisterHandlers() {
 	a.R.GET("/note/:uuid", a.GetNoteByUuid)
 	a.R.GET("/note", a.RequireAuth, a.GetUserNotes)
 	a.R.POST("/note/create", a.RequireAuth, a.CreateNote)
-	a.R.GET("/validate", a.RequireAuth, a.validate)
 	a.R.POST("/signup", a.SignUp)
 	a.R.POST("/login", a.Login)
 }
 
-func (a *App) Run(port string) {
+func (a *App) Run(port string) error {
 	a.RegisterHandlers()
-	a.R.Run(":" + port)
+	err := a.R.Run(":" + port)
+	if err != nil {
+		return fmt.Errorf("failed to run server on port: %s", port)
+	}
+	return nil
 }
-
-//CODE MATCHINGGGGGG
 
 func (a *App) GetNoteByUuid(c *gin.Context) {
 	database := a.DB
 	uuid, _ := uuid.Parse(c.Param("uuid"))
-	note, statusCode := database.GetNoteByUuid(uuid)
+	note, statusCode, err := database.GetNoteByUuid(uuid)
+	if err != nil {
+		c.IndentedJSON(statusCode, gin.H{"error": err.Error()})
+		return
+	}
 	c.IndentedJSON(statusCode, note)
-}
-
-func (a *App) validate(c *gin.Context) {
-	c.IndentedJSON(200, "logged in")
 }
 
 func (a *App) GetUserNotes(c *gin.Context) {
 	id, ok := c.Get("id")
 	if !ok {
-		fmt.Printf("couldn't get user id")
 		c.IndentedJSON(http.StatusUnauthorized, "Unauthorized access")
+		return
 	}
-	notes, statusCode := a.DB.GetAllNotes(id.(uint))
+	notes, statusCode, err := a.DB.GetAllNotes(id.(uint))
+	if err != nil {
+		c.IndentedJSON(statusCode, gin.H{"error": err.Error()})
+		return
+	}
 	c.IndentedJSON(statusCode, notes)
 }
 
@@ -64,25 +73,37 @@ func (a *App) CreateNote(c *gin.Context) {
 		c.IndentedJSON(http.StatusBadRequest, "Check that all fields have been sent")
 		return
 	}
-	database := a.DB
 	id, ok := c.Get("id")
 	if !ok {
-		fmt.Printf("couldn't get user id")
 		c.IndentedJSON(http.StatusUnauthorized, "Unauthorized access")
+		return
 	}
-	note, statusCode := database.CreateNote(id.(uint), newNote)
+	note, statusCode, err := a.DB.CreateNote(id.(uint), newNote)
+	if err != nil {
+		c.IndentedJSON(statusCode, gin.H{"error": err.Error()})
+		return
+	}
 	c.IndentedJSON(statusCode, note)
 }
 
 func (a *App) SignUp(c *gin.Context) {
 	var newUser model.User
 	if err := c.BindJSON(&newUser); err != nil {
+		c.IndentedJSON(http.StatusBadRequest, "Bad request")
 		return
 	}
 
-	password := model.HashPassword(newUser.Password)
+	password, err := model.HashPassword(newUser.Password)
+	if err != nil {
+		c.IndentedJSON(http.StatusConflict, "Error hashing the password")
+		return
+	}
 	newUser.Password = password
-	statusCode := a.DB.SignUp(newUser)
+	statusCode, err := a.DB.SignUp(newUser)
+	if err != nil {
+		c.IndentedJSON(statusCode, gin.H{"error": err.Error()})
+		return
+	}
 	c.IndentedJSON(statusCode, newUser)
 }
 
@@ -92,6 +113,7 @@ func (a *App) RequireAuth(c *gin.Context) {
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
+
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -129,11 +151,13 @@ func (a *App) Login(c *gin.Context) {
 	registeredUser, found := a.DB.GetUser(newUser.Email)
 	if !found {
 		c.JSON(http.StatusNotFound, "Invalid email or password")
+		return
 	}
 
 	err := bcrypt.CompareHashAndPassword([]byte(registeredUser.Password), []byte(newUser.Password))
 	if err != nil {
 		c.JSON(http.StatusNotFound, "Invalid email or password")
+		return
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
