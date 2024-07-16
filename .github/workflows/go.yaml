@@ -8,6 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+      run: cd backend
 
     - name: Set up Go
       uses: actions/setup-go@v4
@@ -26,4 +27,4 @@ jobs:
         working-directory: './backend'
 
     - name: Build
-      run: go build -o server backend/cmd/main.go
+      run: cd backend && go build -o server cmd/main.go
