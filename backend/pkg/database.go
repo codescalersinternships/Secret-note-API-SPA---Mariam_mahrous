@@ -1,56 +1,135 @@
-package db
+package app
 
 import (
-	"errors"
 	"fmt"
-	"os"
+	"net/http"
+	"time"
 
-	"github.com/joho/godotenv"
+	model "github.com/codescalersinternships/Secret-note-API-SPA-Mariam_mahrous/models"
+	"github.com/google/uuid"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
-type DatabaseSingleton struct {
+type DB struct {
 	database *gorm.DB
+	host     string
+	user     string
+	password string
+	dbname   string
+	port     string
 }
 
-var database *DatabaseSingleton
+type ConfigDB struct {
+	DatabaseType string
+	Host         string
+	User         string
+	Password     string
+	DBName       string
+	Port         string
+}
 
-func GetDatabaseSingelton() *DatabaseSingleton {
-	if database == nil {
-		database = &DatabaseSingleton{database: nil}
+func NewDB(configdb ConfigDB) *DB {
+	db := &DB{
+		host:     configdb.Host,
+		user:     configdb.User,
+		password: configdb.Password,
+		dbname:   configdb.DBName,
+		port:     configdb.Port,
 	}
-	return database
+	db.SetDatabase(configdb.DatabaseType)
+	return db
 }
 
-func (s *DatabaseSingleton) GetDatabase() *gorm.DB {
-	return s.database
-}
-
-func (s *DatabaseSingleton) SetDatabase() error {
-	err := godotenv.Load(".env")
-	if err != nil {
-		return errors.New("error loading .env")
-	}
-
-	db := os.Getenv("DATABASE")
+func (s *DB) SetDatabase(databaseType string) error {
 	var dbErr error
-	if db == "POSTGRESQL" {
-		dsn := "host=localhost user=postgres password=123456 dbname=postgres port=5432"
+	if databaseType == "POSTGRESQL" {
+		dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s", s.host, s.user, s.password, s.dbname, s.port)
 		s.database, dbErr = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 		if dbErr != nil {
 			return fmt.Errorf("failed to connect to PostgreSQL database: %v", dbErr.Error())
 		}
 	} else {
-		s.database, dbErr = gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+		s.database, dbErr = gorm.Open(sqlite.Open(s.dbname+".db"), &gorm.Config{})
 		if dbErr != nil {
 			return fmt.Errorf("failed to connect to Sqlite database: %v", dbErr.Error())
 		}
 	}
-	dbErr = database.database.AutoMigrate(&Note{}, &User{})
+	dbErr = s.database.AutoMigrate(&model.Note{}, &model.User{})
 	if dbErr != nil {
 		return fmt.Errorf("failed to migrate to database: %v", dbErr.Error())
 	}
 	return nil
+}
+
+func (s *DB) GetNoteByUuid(uuid uuid.UUID) (model.Note, int) {
+	note := model.Note{UniqueUrl: uuid}
+
+	if res := s.database.Find(&note); res.Error != nil {
+		return note, http.StatusNotFound
+
+	} else if note.ExpirationDate < time.Now().Format("2006-01-02") {
+		s.database.Delete(&note)
+		return note, http.StatusNotFound
+	}
+
+	note.CurrentViews++
+	if note.CurrentViews >= note.MaxViews {
+		s.database.Delete(&note)
+		return note, http.StatusOK
+	}
+	s.database.Save(&note)
+	return note, http.StatusOK
+}
+
+func (s *DB) GetAllNotes(id uint) ([]model.Note, int) {
+	var notes []model.Note
+	if err := s.database.Where("user_id = ?", id).Find(&notes).Error; err != nil {
+		return notes, http.StatusNotFound
+	}
+	return notes, http.StatusOK
+}
+
+func (s *DB) CreateNote(id uint, newNote model.Note) (model.Note, int) {
+	newNote.UniqueUrl = uuid.New()
+	newNote.UserID = id
+	if newNote.ExpirationDate == "" {
+		newNote.ExpirationDate = time.Now().AddDate(0, 3, 0).Format("2006-01-02")
+	}
+	if newNote.MaxViews == 0 {
+		newNote.MaxViews = 100
+	}
+	if res := s.database.Create(&newNote); res.Error != nil {
+		return newNote, http.StatusConflict
+	}
+	return newNote, http.StatusOK
+}
+
+func (s *DB) VerifyUser(email any) (bool, model.User) {
+	var user model.User
+	s.database.Where("email = ?", email).First(&user)
+	return user.Email != "", user
+}
+
+func (s *DB) GetUser(email string) (model.User, bool) {
+	var user model.User
+	s.database.First(&user, "email = ?", email)
+	if user.ID == 0 {
+		return user, false
+	}
+	return user, true
+}
+
+func (s *DB) SignUp(newUser model.User) int {
+	result := s.database.Where("email = ?", newUser.Email).First(&model.User{})
+	if result.Error == nil {
+		return http.StatusInternalServerError
+	}
+
+	if res := s.database.Create(&newUser); res.Error != nil {
+		return http.StatusConflict
+	}
+	return http.StatusOK
+
 }

@@ -1,12 +1,9 @@
-1-  Error handling el panic w keda
-2-  .env yba fy el port w config details bardo "loaded in main w el params passed to el fn ba"
-3-  database singelton msh ma7taga singelton wla haga momken yba fy internal
-4-  note bn3mal note input struct "bad request lw m3ml4 binding" 
-5-  use id instead of user email 34an el relation between el user w el notes 
-6-  el middleware msh el mafrod eno fy hagat el claims dy dy it should be seperate FUNCTIONS 
-7-  hashing el passwords  w keda should be in a seperate files momken m3 hagat el jwt
-8-  el check bta3 enha anhy no3 mn el methods dh msh lazm router handle it lowhdo 
-9-  database fn ll where w find w el klam dh 
-10- unit tests 
-11- docker file
-12- swagger 
+1-  Error handling 
+2- el middleware msh el mafrod eno fy hagat el claims dy 
+3- unit tests 
+4- docker file
+5- swagger
+6- status code checking
+7- check postgres msh rady y connect faga2a leh 
+
+

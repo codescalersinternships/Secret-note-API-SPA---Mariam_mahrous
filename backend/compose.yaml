@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+    db:
+        image: postgres
+        container_name: postgres-db
+        environment:
+            - POSTGRES_PORT=${POSTGRESQL_PORT}
+            - POSTGRES_USER=${USER}  
+            - POSTGRES_PASSWORD=${PASSWORD}
+            - POSTGRES_DB=${POSTGRESQL_PORT}
+
+        ports:
+            - "${POSTGRESQL_PORT}:5342"
+        network_mode: "host"

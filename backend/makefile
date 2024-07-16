@@ -7,3 +7,6 @@ linter:
 run:
 	go run cmd/main.go
 
+docker:
+	docker compose up
+

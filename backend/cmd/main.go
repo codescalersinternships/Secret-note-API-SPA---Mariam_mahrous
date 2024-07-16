@@ -4,39 +4,25 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/codescalersinternships/Secret-note-API-SPA-Mariam_mahrous/routes"
-
-	database "github.com/codescalersinternships/Secret-note-API-SPA-Mariam_mahrous/pkg"
-	"github.com/gin-gonic/gin"
+	app "github.com/codescalersinternships/Secret-note-API-SPA-Mariam_mahrous/pkg"
 	"github.com/joho/godotenv"
 )
-
-
-
 
 func main() {
 
 	err := godotenv.Load(".env")
 	if err != nil {
-		//ADD SLOG HENA
 		fmt.Println("error loading .env")
 	}
 	port := os.Getenv("PORT")
-	//databaseType := os.Getenv("DATABASE")
-
-
-	err = database.GetDatabaseSingelton().SetDatabase()
-	if err != nil {
-		fmt.Println("error accessing database")
+	dbConfig := app.ConfigDB{
+		DatabaseType: os.Getenv("DATABASE"),
+		Host:         "localhost",
+		User:         os.Getenv("USER"),
+		Password:     os.Getenv("PASSWORD"),
+		DBName:       os.Getenv("DBNAME"),
+		Port:         os.Getenv("POSTGRESQL_PORT"),
 	}
-	
-
-	router := gin.Default()
-	routes.Routes(router)
-
-	err = router.Run(":" + port)
-	if err != nil {
-		fmt.Println("an error occured connecting to the database")
-	}
-	fmt.Printf("server running on port: %v" , port)
+	a := app.NewApp(dbConfig)
+	a.Run(port)
 }
