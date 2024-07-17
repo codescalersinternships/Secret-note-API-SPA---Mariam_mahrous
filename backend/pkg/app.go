@@ -1,10 +1,11 @@
 package app
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
-	"errors"
 
 	model "github.com/codescalersinternships/Secret-note-API-SPA-Mariam_mahrous/models"
 	"github.com/gin-contrib/cors"
@@ -121,18 +122,11 @@ func (a *App) SignUp(c *gin.Context) {
 		c.IndentedJSON(statusCode, gin.H{"error": err.Error()})
 		return
 	}
-	c.SetSameSite(http.SameSiteLaxMode)
-	c.SetCookie("Authorization", tokenString, 3600*24*30, "", "", false, true)
 	c.IndentedJSON(statusCode, newUser)
 }
 
 func (a *App) RequireAuth(c *gin.Context) {
-	tokenString, err := c.Cookie("Authorization")
-	if err != nil {
-		c.AbortWithStatus(http.StatusUnauthorized)
-		return
-	}
-
+	tokenString :=  strings.Split(c.Request.Header["Authorization"][0], " ")[1]
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -182,9 +176,8 @@ func (a *App) Login(c *gin.Context) {
 	if err !=nil {
 		c.IndentedJSON(statusCode, gin.H{"error": err.Error()})
 	}
-
-	c.SetSameSite(http.SameSiteLaxMode)
-	c.SetCookie("Authorization", tokenString, 3600*24*30, "", "", false, true)
+	registeredUser.Token=tokenString
+	//save user to db
 	c.IndentedJSON(http.StatusOK, registeredUser)
 }
 
