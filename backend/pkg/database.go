@@ -68,12 +68,14 @@ func (s *DB) SetDatabase(databaseType string) error {
 }
 
 func (s *DB) GetNoteByUuid(uuid uuid.UUID) (model.Note, int, error) {
+	fmt.Print(uuid)
 	note := model.Note{UniqueUrl: uuid}
 
-	if res := s.database.Find(&note); res.Error != nil {
+	if res := s.database.Where("unique_url = ?", uuid).First(&note); res.Error != nil {
 		return note, http.StatusNotFound, errors.New("not found")
 
-	} else if note.ExpirationDate < time.Now().Format("2006-01-02") {
+	}
+	if note.ExpirationDate < time.Now().Format("2006-01-02") {
 		s.database.Delete(&note)
 		return note, http.StatusNotFound, errors.New("expired note")
 	}

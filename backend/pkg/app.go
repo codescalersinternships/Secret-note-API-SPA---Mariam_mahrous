@@ -44,7 +44,7 @@ func (a *App) Run(port string) error {
 	config.AllowHeaders = []string{"Origin", "Content-Type", "Authorization"}
 	config.ExposeHeaders = []string{"Content-Length"}
 	config.AllowCredentials = true
-  
+
 	a.R.Use(cors.New(config))
 
 	a.RegisterHandlers()
@@ -68,13 +68,16 @@ func (a *App) GetNoteByUuid(c *gin.Context) {
 
 func (a *App) GetUserNotes(c *gin.Context) {
 	id, ok := c.Get("id")
+	fmt.Print("notes 1")
 	if !ok {
 		c.IndentedJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized access"})
+		fmt.Print("notes 2")
 		return
 	}
 	notes, statusCode, err := a.DB.GetAllNotes(id.(uint))
 	if err != nil {
 		c.IndentedJSON(statusCode, gin.H{"error": err.Error()})
+		fmt.Print("notes 3")
 		return
 	}
 	c.IndentedJSON(statusCode, notes)
@@ -112,9 +115,9 @@ func (a *App) SignUp(c *gin.Context) {
 		return
 	}
 	newUser.Password = password
-	tokenString , statusCode , err := a.generateToken(newUser)
+	tokenString, statusCode, err := a.generateToken(newUser)
 	newUser.Token = tokenString
-	if err !=nil {
+	if err != nil {
 		c.IndentedJSON(statusCode, gin.H{"error": err.Error()})
 	}
 	statusCode, err = a.DB.SignUp(newUser)
@@ -126,7 +129,8 @@ func (a *App) SignUp(c *gin.Context) {
 }
 
 func (a *App) RequireAuth(c *gin.Context) {
-	tokenString :=  strings.Split(c.Request.Header["Authorization"][0], " ")[1]
+	tokenString := strings.Split(c.Request.Header["Authorization"][0], " ")[1]
+
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -172,16 +176,16 @@ func (a *App) Login(c *gin.Context) {
 		c.JSON(http.StatusNotFound, "Invalid email or password")
 		return
 	}
-	tokenString , statusCode , err := a.generateToken(registeredUser)
-	if err !=nil {
+	tokenString, statusCode, err := a.generateToken(registeredUser)
+	if err != nil {
 		c.IndentedJSON(statusCode, gin.H{"error": err.Error()})
 	}
-	registeredUser.Token=tokenString
+	registeredUser.Token = tokenString
 	//save user to db
 	c.IndentedJSON(http.StatusOK, registeredUser)
 }
 
-func (a*App) generateToken(user model.User) (string,int ,error){
+func (a *App) generateToken(user model.User) (string, int, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"id":    user.ID,
 		"email": user.Email,
@@ -192,7 +196,7 @@ func (a*App) generateToken(user model.User) (string,int ,error){
 	tokenString, err := token.SignedString([]byte("secret-key"))
 
 	if err != nil {
-		return "", http.StatusConflict , errors.New("couldn't create Token")
+		return "", http.StatusConflict, errors.New("couldn't create Token")
 	}
-	return tokenString , 0 , nil
+	return tokenString, 0, nil
 }

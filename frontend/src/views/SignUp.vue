@@ -1,108 +1,105 @@
 <script setup lang="ts">
-    import { ref } from 'vue';
-    import { useRouter } from 'vue-router'
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 
-    const router = useRouter()
-    let signUp = ref(true);
-    let email = ref('');
-    let password = ref('');
+const router = useRouter()
+let signUp = ref(true)
+let email = ref('')
+let password = ref('')
 
-    const handleClick = () => {
-        signUp.value=!signUp.value
-    };
+const handleClick = () => {
+  signUp.value = !signUp.value
+}
 
-    const handleSubmit = async () => {
-      try {
-        let endpoint = signUp.value ? '/signup' : '/login'
-        let apiUrl = 'http://localhost:8080' + endpoint
-        const response = await fetch(apiUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ email: email.value, password: password.value })
-        })
+const handleSubmit = async () => {
+  try {
+    let endpoint = signUp.value ? '/signup' : '/login'
+    let apiUrl = 'http://localhost:8080' + endpoint
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email: email.value, password: password.value })
+    })
 
-        const data = await response.json()
-        if (response.ok) {
-          localStorage.setItem('token', data.token);
-          router.replace('/home')
-        } else {
-          alert(data.error)
-        }
-      } catch (error) {
-        console.error('Error: ', error)
-      }
+    const data = await response.json()
+    if (response.ok) {
+      localStorage.setItem('token', data.token)
+      router.replace('/home')
+    } else {
+      alert(data.error)
     }
-
+  } catch (error) {
+    console.error('Error: ', error)
+  }
+}
 </script>
 
-
 <template>
-  <button type="submit" id="button" @click="handleClick">{{signUp ? "Log in" :"Sign up"}}</button>
-  <div class="signup-container">
-
-    <h1>{{signUp ? "Sign up":"Log in"}}</h1>
+  <div>
+    <h1>{{ signUp ? 'Sign up' : 'Log in' }}</h1>
     <form @submit.prevent="signUp">
-        <label for="Email">Email:</label> <br> <br>
-        <input type="email" placeholder="Enter Email" v-model="email">
+      <label for="Email">Email:</label> <br />
+      <br />
+      <input type="email" placeholder="Enter Email" v-model="email" />
 
-        <label for="Password">Password:</label> <br><br>
-        <input type="password" placeholder="Enter Password" minlength="8" v-model="password"> 
-        <button type="submit" @click="handleSubmit">{{signUp ? "Sign Up":"Log in"}}</button>
-      </form>
-    </div>
+      <label for="Password">Password:</label> <br /><br />
+      <input type="password" placeholder="Enter Password" minlength="8" v-model="password" />
+      <p>
+        {{ signUp ? 'Already have an account?' : 'Create an account' }}
+        <span @click="handleClick">{{ signUp ? 'Log in' : 'Sign up' }}</span>
+      </p>
+      <button type="submit" @click="handleSubmit">{{ signUp ? 'Sign Up' : 'Log in' }}</button>
+    </form>
+  </div>
 </template>
 
 <style scoped>
-.signup-container {
+div {
   max-width: 400px;
   margin: 0 auto;
   padding: 20px;
   border: 1px solid #ccc;
   border-radius: 8px;
   margin-top: 20vh;
- }
+}
 
 h1 {
-
   font-size: 24px;
   margin-bottom: 20px;
   text-align: center;
-
 }
 
 form input {
-
   width: 100%;
   padding: 12px;
   margin-bottom: 10px;
   border-radius: 5px;
   border: 1px solid #ccc;
   box-sizing: border-box;
-
 }
 
-form button ,#button  {
-
-  background-color: #4CAF50;
+form button {
+  background-color: #4caf50;
   color: white;
   border: none;
   cursor: pointer;
   width: 100%;
   padding: 12px;
   border-radius: 5px;
-
 }
 
 button:hover {
   background-color: #45a049;
 }
 
-#button{
-  width:fit-Content
+span {
+  color: #4caf50;
 }
 
-
+p,
+span {
+  font-size: medium;
+}
 </style>
-
