@@ -5,10 +5,13 @@ linter:
 	golangci-lint run
 
 run:
-	go run cmd/main.go
+	npm run dev
 
 docker:
 	docker compose up
 
 test:
 	go test -v ./...
+
+install:
+	npm install
