@@ -1,6 +1,5 @@
 1- unit tests
 2- swagger 
-3- middleware
+3- azbat el auth functions 
 4- check postgres msh rady y connect faga2a leh 
 5- documentation
-6- check docker .env msh rady y read it leh?

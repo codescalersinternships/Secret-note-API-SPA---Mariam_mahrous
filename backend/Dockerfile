@@ -4,8 +4,9 @@ RUN apk add build-base
 
 WORKDIR /server
 
+COPY .env .env
+
 COPY . .
-COPY .env .
 RUN go mod download
 
 RUN  CGO_ENABLED=1 GOOS=linux go build -o /myserver ./cmd
@@ -14,6 +15,7 @@ FROM alpine:edge
 
 WORKDIR /server
 
+COPY .env .env
 COPY --from=build /myserver .
 
 EXPOSE ${PORT}
