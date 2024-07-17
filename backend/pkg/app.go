@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+	"errors"
 
 	model "github.com/codescalersinternships/Secret-note-API-SPA-Mariam_mahrous/models"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -34,6 +36,16 @@ func (a *App) RegisterHandlers() {
 }
 
 func (a *App) Run(port string) error {
+
+	config := cors.DefaultConfig()
+	config.AllowOrigins = []string{"http://localhost:5173"}
+	config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
+	config.AllowHeaders = []string{"Origin", "Content-Type", "Authorization"}
+	config.ExposeHeaders = []string{"Content-Length"}
+	config.AllowCredentials = true
+  
+	a.R.Use(cors.New(config))
+
 	a.RegisterHandlers()
 	err := a.R.Run(":" + port)
 	if err != nil {
@@ -56,7 +68,7 @@ func (a *App) GetNoteByUuid(c *gin.Context) {
 func (a *App) GetUserNotes(c *gin.Context) {
 	id, ok := c.Get("id")
 	if !ok {
-		c.IndentedJSON(http.StatusUnauthorized, "Unauthorized access")
+		c.IndentedJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized access"})
 		return
 	}
 	notes, statusCode, err := a.DB.GetAllNotes(id.(uint))
@@ -70,12 +82,12 @@ func (a *App) GetUserNotes(c *gin.Context) {
 func (a *App) CreateNote(c *gin.Context) {
 	var newNote model.Note
 	if err := c.BindJSON(&newNote); err != nil {
-		c.IndentedJSON(http.StatusBadRequest, "Check that all fields have been sent")
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Check that all fields have been sent"})
 		return
 	}
 	id, ok := c.Get("id")
 	if !ok {
-		c.IndentedJSON(http.StatusUnauthorized, "Unauthorized access")
+		c.IndentedJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized access"})
 		return
 	}
 	note, statusCode, err := a.DB.CreateNote(id.(uint), newNote)
@@ -89,21 +101,28 @@ func (a *App) CreateNote(c *gin.Context) {
 func (a *App) SignUp(c *gin.Context) {
 	var newUser model.User
 	if err := c.BindJSON(&newUser); err != nil {
-		c.IndentedJSON(http.StatusBadRequest, "Bad request")
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": "Bad request"})
 		return
 	}
 
 	password, err := model.HashPassword(newUser.Password)
 	if err != nil {
-		c.IndentedJSON(http.StatusConflict, "Error hashing the password")
+		c.IndentedJSON(http.StatusConflict, gin.H{"error": "Error hashing the password"})
 		return
 	}
 	newUser.Password = password
-	statusCode, err := a.DB.SignUp(newUser)
+	tokenString , statusCode , err := a.generateToken(newUser)
+	newUser.Token = tokenString
+	if err !=nil {
+		c.IndentedJSON(statusCode, gin.H{"error": err.Error()})
+	}
+	statusCode, err = a.DB.SignUp(newUser)
 	if err != nil {
 		c.IndentedJSON(statusCode, gin.H{"error": err.Error()})
 		return
 	}
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie("Authorization", tokenString, 3600*24*30, "", "", false, true)
 	c.IndentedJSON(statusCode, newUser)
 }
 
@@ -150,7 +169,7 @@ func (a *App) Login(c *gin.Context) {
 	}
 	registeredUser, found := a.DB.GetUser(newUser.Email)
 	if !found {
-		c.JSON(http.StatusNotFound, "Invalid email or password")
+		c.IndentedJSON(http.StatusNotFound, gin.H{"error": "Invalid email or password"})
 		return
 	}
 
@@ -159,10 +178,20 @@ func (a *App) Login(c *gin.Context) {
 		c.JSON(http.StatusNotFound, "Invalid email or password")
 		return
 	}
+	tokenString , statusCode , err := a.generateToken(registeredUser)
+	if err !=nil {
+		c.IndentedJSON(statusCode, gin.H{"error": err.Error()})
+	}
 
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie("Authorization", tokenString, 3600*24*30, "", "", false, true)
+	c.IndentedJSON(http.StatusOK, registeredUser)
+}
+
+func (a*App) generateToken(user model.User) (string,int ,error){
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"id":    registeredUser.ID,
-		"email": registeredUser.Email,
+		"id":    user.ID,
+		"email": user.Email,
 		"exp":   time.Now().Add(time.Hour * 24 * 30).Unix(),
 	})
 
@@ -170,10 +199,7 @@ func (a *App) Login(c *gin.Context) {
 	tokenString, err := token.SignedString([]byte("secret-key"))
 
 	if err != nil {
-		c.IndentedJSON(http.StatusConflict, "Couldn't create Token")
-		return
+		return "", http.StatusConflict , errors.New("couldn't create Token")
 	}
-	c.SetSameSite(http.SameSiteLaxMode)
-	c.SetCookie("Authorization", tokenString, 3600*24*30, "", "", false, true)
-	c.IndentedJSON(http.StatusOK, "")
+	return tokenString , 0 , nil
 }

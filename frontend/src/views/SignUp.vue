@@ -1,5 +1,8 @@
 <script setup lang="ts">
     import { ref } from 'vue';
+    import { useRouter } from 'vue-router'
+
+    const router = useRouter()
     let signUp = ref(true);
     let email = ref('');
     let password = ref('');
@@ -7,6 +10,30 @@
     const handleClick = () => {
         signUp.value=!signUp.value
     };
+
+    const handleSubmit = async () => {
+      try {
+        let endpoint = signUp.value ? '/signup' : '/login'
+        let apiUrl = 'http://localhost:8080' + endpoint
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ email: email.value, password: password.value })
+        })
+
+        const data = await response.json()
+        if (response.ok) {
+          localStorage.setItem('token', data.token);
+          router.replace('/home')
+        } else {
+          alert(data.error)
+        }
+      } catch (error) {
+        console.error('Error: ', error)
+      }
+    }
 
 </script>
 
@@ -22,7 +49,7 @@
 
         <label for="Password">Password:</label> <br><br>
         <input type="password" placeholder="Enter Password" minlength="8" v-model="password"> 
-        <button type="submit">{{signUp ? "Sign Up":"Log in"}}</button>
+        <button type="submit" @click="handleSubmit">{{signUp ? "Sign Up":"Log in"}}</button>
       </form>
     </div>
 </template>
@@ -56,7 +83,7 @@ form input {
 
 }
 
-form button {
+form button ,#button  {
 
   background-color: #4CAF50;
   color: white;
@@ -72,15 +99,8 @@ button:hover {
   background-color: #45a049;
 }
 
-#button {
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  cursor: pointer;
-  width: fit-content;
-  padding: 10px;
-  border-radius: 5px;
-  justify-content: flex-end;
+#button{
+  width:fit-Content
 }
 
 

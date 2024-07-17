@@ -3,7 +3,8 @@ import SignUp from '../views/SignUp.vue';
 import CreateNote from '../views/CreateNote.vue'
 import NoteCreated from '../views/NoteCreated.vue'
 import ViewNote from '../components/ViewNote.vue'
-import ViewNotes from '../views/ViewNote.vue'
+import ViewNotes from '../views/ViewNotes.vue'
+import HomePage from '../views/HomePage.vue'
 
 
 
@@ -15,6 +16,8 @@ const router = createRouter({
     { path: '/note/created', component: NoteCreated },
     { path: '/note/:uuid', component: ViewNote },
     { path: '/note', component: ViewNotes },
+    { path: '/home', component: HomePage },
+
   ]
 })
 
