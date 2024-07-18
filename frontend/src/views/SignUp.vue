@@ -39,7 +39,7 @@ const handleSubmit = async () => {
 <template>
   <div>
     <h1>{{ signUp ? 'Sign up' : 'Log in' }}</h1>
-    <form @submit.prevent="signUp">
+    <form @submit.prevent="handleSubmit">
       <label for="Email">Email:</label> <br />
       <br />
       <input type="email" placeholder="Enter Email" v-model="email" />
@@ -50,7 +50,7 @@ const handleSubmit = async () => {
         {{ signUp ? 'Already have an account?' : 'Create an account' }}
         <span @click="handleClick">{{ signUp ? 'Log in' : 'Sign up' }}</span>
       </p>
-      <button type="submit" @click="handleSubmit">{{ signUp ? 'Sign Up' : 'Log in' }}</button>
+      <button type="submit">{{ signUp ? 'Sign Up' : 'Log in' }}</button>
     </form>
   </div>
 </template>

@@ -1,5 +1,0 @@
-1- unit tests
-2- swagger 
-3- azbat el auth functions 
-4- check postgres msh rady y connect faga2a leh 
-5- documentation

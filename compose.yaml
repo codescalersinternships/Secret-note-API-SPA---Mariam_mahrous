@@ -3,6 +3,7 @@ services:
     db:
         image: postgres
         container_name: postgres-db
+        env_file: .env
         environment:
             - POSTGRES_PORT=${POSTGRESQL_PORT}
             - POSTGRES_USER=${USER}  
@@ -14,7 +15,7 @@ services:
         
     backend:
         build: 
-            dockerfile: Dockerfile
+            dockerfile: backend/Dockerfile
         image: secretnote-be
         ports:
             - "${PORT}:${PORT}"
@@ -22,4 +23,13 @@ services:
             - db
         env_file:
             - .env
+      
+    frontend:
+        build: 
+            context: ./frontend
+            dockerfile: Dockerfile
+        image: secretnote-fe
+        ports:
+            - "3000:80"
+    
 

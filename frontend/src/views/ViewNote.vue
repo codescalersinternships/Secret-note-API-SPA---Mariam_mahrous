@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { type Note } from '../models/Note'
+
 const route = useRoute()
-const title = ref('')
-const content = ref('')
-const maxViews = ref('')
-const views = ref('')
+const note = ref<Note | null>(null)
 
 onMounted(() => {
   GetNoteByID()
@@ -23,11 +22,7 @@ const GetNoteByID = async () => {
 
     const data = await response.json()
     if (response.ok) {
-      console.log(route.params.uuid)
-      title.value = data.title
-      content.value = data.content
-      maxViews.value = data.max_views
-      views.value = data.current_views
+      note.value = data
     } else {
       console.log(data.error)
       alert(data.error)
@@ -39,10 +34,10 @@ const GetNoteByID = async () => {
 </script>
 
 <template>
-  <div class="viewNote-container">
-    <h1>{{ title }}</h1>
-    <p id="view_viewer_number">viewer number : {{ views }} / {{ maxViews }}</p>
-    <p id="view_content">{{ content }}</p>
+  <div class="viewNote-container" v-if="note">
+    <h1>{{ note.title }}</h1>
+    <p id="view_viewer_number">viewer number : {{ note.current_views }} / {{ note.max_views }}</p>
+    <p id="view_content">{{ note.content }}</p>
   </div>
 </template>
 

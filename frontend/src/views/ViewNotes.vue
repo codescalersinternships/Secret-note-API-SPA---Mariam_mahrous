@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { type Note } from '../models/Note'
 
-const notes = ref('')
+const notes = ref<Note[]>([])
 
 const GetNotes = async () => {
   try {
@@ -33,7 +34,7 @@ onMounted(() => {
 
 <template>
   <h1 id="header">My notes</h1>
-  <div class="viewNotes" v-if="notes != ''">
+  <div class="viewNotes" v-if="notes.length > 0">
     <div v-for="note in notes" :key="note.id" class="viewNote-container">
       <h1>{{ note.title }}</h1>
       <p id="view_viewer_number">viewer number: {{ note.current_views }} / {{ note.max_views }}</p>
@@ -61,6 +62,9 @@ onMounted(() => {
   flex-wrap: wrap;
   gap: 10px;
   padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  margin: auto;
   border: 1px solid #ccc;
   border-radius: 8px;
   margin: auto;

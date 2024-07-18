@@ -5,6 +5,8 @@ import (
 	"os"
 
 	app "github.com/codescalersinternships/Secret-note-API-SPA-Mariam_mahrous/pkg"
+	database "github.com/codescalersinternships/Secret-note-API-SPA-Mariam_mahrous/database"
+
 	"github.com/joho/godotenv"
 )
 
@@ -15,7 +17,7 @@ func main() {
 		fmt.Println("error loading .env")
 	}
 	port := os.Getenv("PORT")
-	dbConfig := app.ConfigDB{
+	dbConfig := database.ConfigDB{
 		DatabaseType: os.Getenv("DATABASE"),
 		Host:         "localhost",
 		User:         os.Getenv("USER"),
@@ -23,7 +25,7 @@ func main() {
 		DBName:       os.Getenv("DBNAME"),
 		Port:         os.Getenv("POSTGRESQL_PORT"),
 	}
-	a, err := app.NewApp(dbConfig)
+	a, err := app.NewApp(dbConfig , os.Getenv("TOKEN_KEY") )
 	if err != nil {
 		fmt.Println("error in config")
 	}

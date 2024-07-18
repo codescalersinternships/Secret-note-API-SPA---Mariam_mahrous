@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { NoteData } from '../models/Note'
 
 const router = useRouter()
 let title = ref('')
@@ -8,21 +9,14 @@ let content = ref('')
 let date = ref('')
 let views = ref('')
 
-const handleSubmit = async () => {
+const createNote = async () => {
   try {
     let apiUrl = 'http://localhost:8080/note/create'
-    let data = {
-      title: title.value,
-      content: content.value
-    }
-
-    if (date.value !== '') {
-      data.expiration_date = date.value
-    }
-
-    if (views.value !== '') {
-      data.max_views = views.value
-    }
+    let data = new NoteData(title.value, content.value)
+    if (date.value!='')
+      data.expiration_date=date.value
+    if (views.value!='')
+      data.max_views=views.value
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
@@ -65,7 +59,7 @@ const handleSubmit = async () => {
       <br />
       <input type="number" id="max_views" name="max_views" min="0" v-model="views" /><br /><br />
 
-      <button @click="handleSubmit" type="submit">Create Note</button>
+      <button type="submit">Create Note</button>
     </form>
   </div>
 </template>

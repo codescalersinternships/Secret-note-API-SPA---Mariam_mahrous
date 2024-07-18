@@ -1,37 +1,39 @@
 package app
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
-	"strings"
-	"time"
 
 	model "github.com/codescalersinternships/Secret-note-API-SPA-Mariam_mahrous/models"
+	middleware "github.com/codescalersinternships/Secret-note-API-SPA-Mariam_mahrous/middleware"
+	database "github.com/codescalersinternships/Secret-note-API-SPA-Mariam_mahrous/database"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type App struct {
 	R  *gin.Engine
-	DB DB
+	DB database.DB
+	MW middleware.MW 
 }
 
-func NewApp(db ConfigDB) (*App, error) {
-	database, err := NewDB(db)
-	if err != nil {
-		return &App{R: gin.Default(), DB: *database}, err
+func NewApp(db database.ConfigDB , tokenKey string) (*App, error) {
+	database, err := database.NewDB(db)
+	mw := middleware.MW{
+		TokenKey: tokenKey,
+		DB:       *database,
 	}
-	return &App{R: gin.Default(), DB: *database}, nil
+	if err != nil {
+		return &App{R: gin.Default(), DB: *database , MW: mw}, err
+	}
+	return &App{R: gin.Default(), DB: *database , MW: mw}, nil
 }
 
 func (a *App) RegisterHandlers() {
 	a.R.GET("/note/:uuid", a.GetNoteByUuid)
-	a.R.GET("/note", a.RequireAuth, a.GetUserNotes)
-	a.R.POST("/note/create", a.RequireAuth, a.CreateNote)
+	a.R.GET("/note", a.MW.RequireAuth, a.GetUserNotes)
+	a.R.POST("/note/create", a.MW.RequireAuth, a.CreateNote)
 	a.R.POST("/signup", a.SignUp)
 	a.R.POST("/login", a.Login)
 }
@@ -109,56 +111,28 @@ func (a *App) SignUp(c *gin.Context) {
 		return
 	}
 
-	password, err := model.HashPassword(newUser.Password)
-	if err != nil {
-		c.IndentedJSON(http.StatusConflict, gin.H{"error": "Error hashing the password"})
+	hashedpassword , statusCode ,err := a.MW.HashPassword(newUser.Password)
+	if err !=nil{
+		c.IndentedJSON(statusCode, gin.H{"error": err.Error()})
 		return
 	}
-	newUser.Password = password
-	tokenString, statusCode, err := a.generateToken(newUser)
-	newUser.Token = tokenString
+	newUser.Password = hashedpassword
+
+	tokenString, statusCode, err := a.MW.GenerateToken(newUser)
 	if err != nil {
 		c.IndentedJSON(statusCode, gin.H{"error": err.Error()})
+		return
 	}
+	newUser.Token = tokenString
+	
 	statusCode, err = a.DB.SignUp(newUser)
 	if err != nil {
 		c.IndentedJSON(statusCode, gin.H{"error": err.Error()})
-		return
+ 		return
 	}
 	c.IndentedJSON(statusCode, newUser)
 }
 
-func (a *App) RequireAuth(c *gin.Context) {
-	tokenString := strings.Split(c.Request.Header["Authorization"][0], " ")[1]
-
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-
-		return []byte("secret-key"), nil
-	})
-
-	if err != nil {
-		c.AbortWithStatus(http.StatusUnauthorized)
-		return
-	}
-
-	if claims, ok := token.Claims.(jwt.MapClaims); ok {
-		if float64(time.Now().Unix()) > claims["exp"].(float64) {
-			c.AbortWithStatus(http.StatusUnauthorized)
-			return
-		}
-		authorized, user := a.DB.VerifyUser(claims["email"])
-		if authorized {
-			c.Set("id", user.ID)
-		}
-		c.Next()
-	} else {
-		c.AbortWithStatus(http.StatusUnauthorized)
-		return
-	}
-}
 
 func (a *App) Login(c *gin.Context) {
 	var newUser model.User
@@ -171,12 +145,11 @@ func (a *App) Login(c *gin.Context) {
 		return
 	}
 
-	err := bcrypt.CompareHashAndPassword([]byte(registeredUser.Password), []byte(newUser.Password))
-	if err != nil {
-		c.JSON(http.StatusNotFound, "Invalid email or password")
-		return
+	statusCode , err:= a.MW.CompareHashAndPassword(registeredUser.Password, newUser.Password )
+	if err!= nil {
+		c.IndentedJSON(statusCode, gin.H{"error": err.Error()})
 	}
-	tokenString, statusCode, err := a.generateToken(registeredUser)
+	tokenString, statusCode, err := a.MW.GenerateToken(registeredUser)
 	if err != nil {
 		c.IndentedJSON(statusCode, gin.H{"error": err.Error()})
 	}
@@ -185,18 +158,3 @@ func (a *App) Login(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, registeredUser)
 }
 
-func (a *App) generateToken(user model.User) (string, int, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"id":    user.ID,
-		"email": user.Email,
-		"exp":   time.Now().Add(time.Hour * 24 * 30).Unix(),
-	})
-
-	//Should i store this in .env and load it?
-	tokenString, err := token.SignedString([]byte("secret-key"))
-
-	if err != nil {
-		return "", http.StatusConflict, errors.New("couldn't create Token")
-	}
-	return tokenString, 0, nil
-}
