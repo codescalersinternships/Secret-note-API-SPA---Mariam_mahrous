@@ -14,10 +14,7 @@ jobs:
 
     - name: Install dependencies
       run: cd frontend && make install
-
-    - name: Build project
-      run: cd frontend && make run
-      
+   
     - name: format
       run: cd frontend && make format
 
