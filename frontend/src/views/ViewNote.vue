@@ -7,14 +7,13 @@ const route = useRoute()
 const note = ref<Note | null>(null)
 const API_URL = import.meta.env.VITE_API_URL
 
-
 onMounted(() => {
   GetNoteByID()
 })
 
 const GetNoteByID = async () => {
   try {
-    let apiUrl = API_URL +'/note/' + route.params.uuid
+    let apiUrl = API_URL + '/note/' + route.params.uuid
     const response = await fetch(apiUrl, {
       method: 'GET',
       headers: {

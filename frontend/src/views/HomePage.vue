@@ -14,8 +14,8 @@ const naviagteToCreateNotes = () => {
 <template>
   <div>
     <h1>Homepage</h1>
-    <button type="submit" @click="naviagteToNotes">View Notes</button>
-    <button type="submit" @click="naviagteToCreateNotes">Create a new note</button>
+    <button type="submit" @click="naviagteToNotes" id="view-Notes">View Notes</button>
+    <button type="submit" @click="naviagteToCreateNotes" id="new-note">Create a new note</button>
   </div>
 </template>
 

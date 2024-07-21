@@ -8,7 +8,6 @@ let email = ref('')
 let password = ref('')
 const API_URL = import.meta.env.VITE_API_URL
 
-
 const handleClick = () => {
   signUp.value = !signUp.value
 }
@@ -17,7 +16,6 @@ const handleSubmit = async () => {
   try {
     let endpoint = signUp.value ? '/signup' : '/login'
     let apiUrl = API_URL + endpoint
-    console.log(apiUrl)
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
@@ -25,7 +23,6 @@ const handleSubmit = async () => {
       },
       body: JSON.stringify({ email: email.value, password: password.value })
     })
-
     const data = await response.json()
     if (response.ok) {
       localStorage.setItem('token', data.token)

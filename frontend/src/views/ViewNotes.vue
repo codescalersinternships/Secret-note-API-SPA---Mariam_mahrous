@@ -5,14 +5,13 @@ import { type Note } from '../models/Note'
 const notes = ref<Note[]>([])
 const API_URL = import.meta.env.VITE_API_URL
 
-
 onMounted(() => {
   GetNotes()
 })
 
 const GetNotes = async () => {
   try {
-    const apiUrl = API_URL+ '/note'
+    const apiUrl = API_URL + '/note'
     const response = await fetch(apiUrl, {
       method: 'GET',
       headers: {
@@ -32,8 +31,6 @@ const GetNotes = async () => {
     console.error('Error: ', error)
   }
 }
-
-
 </script>
 
 <template>
