@@ -38,10 +38,10 @@ func (a *App) RegisterHandlers() {
 	a.R.POST("/login", a.Login)
 }
 
-func (a *App) Run(port string) error {
+func (a *App) Run(port string , frontendUrl string) error {
 
 	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"http://localhost:5173"}
+	config.AllowOrigins = []string{frontendUrl}
 	config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
 	config.AllowHeaders = []string{"Origin", "Content-Type", "Authorization"}
 	config.ExposeHeaders = []string{"Content-Length"}

@@ -8,15 +8,14 @@ let title = ref('')
 let content = ref('')
 let date = ref('')
 let views = ref('')
+const API_URL = import.meta.env.VITE_API_URL
 
 const createNote = async () => {
   try {
-    let apiUrl = 'http://localhost:8080/note/create'
+    let apiUrl = API_URL + '/note/create'
     let data = new NoteData(title.value, content.value)
-    if (date.value!='')
-      data.expiration_date=date.value
-    if (views.value!='')
-      data.max_views=views.value
+    if (date.value != '') data.expiration_date = date.value
+    if (views.value != '') data.max_views = views.value
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {

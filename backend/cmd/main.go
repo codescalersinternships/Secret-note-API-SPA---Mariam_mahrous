@@ -29,7 +29,7 @@ func main() {
 	if err != nil {
 		fmt.Println("error in config")
 	}
-	err = a.Run(port)
+	err = a.Run(port , os.Getenv("FRONTEND_URL"))
 	if err != nil {
 		fmt.Println("error running server")
 	}

@@ -1,0 +1,29 @@
+name: Vue
+
+on: push 
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node
+      uses: actions/setup-node@v4
+
+    - name: Install dependencies
+      run: cd frontend && make install
+
+    - name: Build project
+      run: cd frontend && make run
+      
+    - name: format
+      run: cd frontend && make format
+
+    - name: Test
+      run: cd frontend && make test
+
+    - name: Run Go-linter
+      run: cd frontend && make linter
+

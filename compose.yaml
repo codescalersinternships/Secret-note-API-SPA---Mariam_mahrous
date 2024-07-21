@@ -15,7 +15,8 @@ services:
         
     backend:
         build: 
-            dockerfile: backend/Dockerfile
+            context: ./backend
+            dockerfile: Dockerfile
         image: secretnote-be
         ports:
             - "${PORT}:${PORT}"
@@ -31,5 +32,7 @@ services:
         image: secretnote-fe
         ports:
             - "3000:80"
+        env_file:
+            - .env
     
 

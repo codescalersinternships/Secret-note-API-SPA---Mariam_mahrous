@@ -6,6 +6,8 @@ const router = useRouter()
 let signUp = ref(true)
 let email = ref('')
 let password = ref('')
+const API_URL = import.meta.env.VITE_API_URL
+
 
 const handleClick = () => {
   signUp.value = !signUp.value
@@ -14,7 +16,8 @@ const handleClick = () => {
 const handleSubmit = async () => {
   try {
     let endpoint = signUp.value ? '/signup' : '/login'
-    let apiUrl = 'http://localhost:8080' + endpoint
+    let apiUrl = API_URL + endpoint
+    console.log(apiUrl)
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {

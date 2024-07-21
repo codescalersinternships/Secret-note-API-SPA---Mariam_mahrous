@@ -2,16 +2,20 @@ format:
 	npm run format
 
 linter: 
-	golangci-lint run
+	npx prettier --write .
 
 run:
 	npm run dev
 
 docker:
-	docker compose up
+	docker build --tag secretnote-fe .
+	docker run secretnote-fe
 
 test:
-	go test -v ./...
+	npm run test:unit
+
+e2e:
+	npm run test:e2e
 
 install:
 	npm install

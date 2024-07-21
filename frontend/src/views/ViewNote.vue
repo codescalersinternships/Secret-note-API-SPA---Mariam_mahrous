@@ -5,6 +5,8 @@ import { type Note } from '../models/Note'
 
 const route = useRoute()
 const note = ref<Note | null>(null)
+const API_URL = import.meta.env.VITE_API_URL
+
 
 onMounted(() => {
   GetNoteByID()
@@ -12,7 +14,7 @@ onMounted(() => {
 
 const GetNoteByID = async () => {
   try {
-    let apiUrl = 'http://localhost:8080/note/' + route.params.uuid
+    let apiUrl = API_URL +'/note/' + route.params.uuid
     const response = await fetch(apiUrl, {
       method: 'GET',
       headers: {

@@ -19,8 +19,12 @@ type MW struct {
 	DB database.DB
 }
 
-func (m *MW) RequireAuth(c *gin.Context) {
-	tokenString := strings.Split(c.Request.Header["Authorization"][0], " ")[1]
+func (m *MW) CheckToken(Authorization []string) (*jwt.Token  , error){
+	if len(Authorization)!=2 {
+		return nil ,errors.New("Unathorized")
+	}
+
+	tokenString := Authorization[1]
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -31,8 +35,18 @@ func (m *MW) RequireAuth(c *gin.Context) {
 	})
 
 	if err != nil {
+		return nil ,errors.New("Unathorized")
+	}
+	return token , nil
+}
+
+func (m *MW) RequireAuth(c *gin.Context) {
+	
+	Authorization := strings.Split(c.Request.Header["Authorization"][0], " ")
+	token , err :=m.CheckToken(Authorization)
+
+	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
-		return
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok {
@@ -81,3 +95,4 @@ func (m *MW) CompareHashAndPassword(currentPassword , enteredPassword string) (i
 	}
 	return 200 , nil
 }
+
