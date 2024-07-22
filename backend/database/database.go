@@ -109,7 +109,7 @@ func (s *DB) CreateNote(id uint, newNote model.Note) (model.Note, int, error) {
 	if res := s.database.Create(&newNote); res.Error != nil {
 		return newNote, http.StatusConflict, errors.New("cannot create a new note")
 	}
-	return newNote, http.StatusOK, nil
+	return newNote, http.StatusCreated, nil
 }
 
 func (s *DB) VerifyUser(email any) (bool, model.User) {
@@ -134,8 +134,8 @@ func (s *DB) SignUp(newUser model.User) (int, error) {
 	}
 
 	if res := s.database.Create(&newUser); res.Error != nil {
-		return http.StatusConflict, errors.New("cannpt create user")
+		return http.StatusConflict, errors.New("cannot create user")
 	}
-	return http.StatusOK, nil
+	return http.StatusCreated, nil
 
 }

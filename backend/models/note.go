@@ -17,7 +17,8 @@ type Note struct {
 }
 
 type CreateNoteInput struct {
-	Content  string `json:"content"`
-	MaxViews int    `json:"max_views"`
-	Title    string `json:"title"`
+	Title          string `json:"title"`
+	Content        string `json:"content"`
+	ExpirationDate string `json:"expiration_date"`
+	MaxViews       int    `json:"max_views"`
 }

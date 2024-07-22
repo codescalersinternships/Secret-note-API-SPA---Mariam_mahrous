@@ -5,6 +5,7 @@ linter:
 	golangci-lint run
 
 run:
+	swag init --parseDependency --parseInternal -g cmd/main.go
 	go run cmd/main.go
 
 docker:
@@ -12,3 +13,6 @@ docker:
 
 test:
 	go test -v ./...
+
+swagger:
+	swag init --parseDependency --parseInternal -g cmd/main.go

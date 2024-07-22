@@ -50,7 +50,7 @@ const createNote = async () => {
       <label for="content">Content:</label> <br /><br />
       <textarea id="content" v-model="content" required></textarea><br /><br />
 
-      <label for="expiry_date">Expiry Date:</label> <br />
+      <label for="content">Expiry Date:</label> <br />
       <br />
       <input type="date" id="expiry_date" name="expiry_date" v-model="date" /><br /><br />
 

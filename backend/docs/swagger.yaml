@@ -1,0 +1,241 @@
+definitions:
+  github_com_codescalersinternships_Secret-note-API-SPA-Mariam_mahrous_models.CreateNoteInput:
+    properties:
+      content:
+        type: string
+      expiration_date:
+        type: string
+      max_views:
+        type: integer
+      title:
+        type: string
+    type: object
+  github_com_codescalersinternships_Secret-note-API-SPA-Mariam_mahrous_models.CreateUserInput:
+    properties:
+      email:
+        type: string
+      password:
+        minLength: 8
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  github_com_codescalersinternships_Secret-note-API-SPA-Mariam_mahrous_models.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  github_com_codescalersinternships_Secret-note-API-SPA-Mariam_mahrous_models.Note:
+    properties:
+      content:
+        type: string
+      createdAt:
+        type: string
+      current_views:
+        type: integer
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      expiration_date:
+        type: string
+      id:
+        type: integer
+      max_views:
+        type: integer
+      title:
+        type: string
+      unique_url:
+        type: string
+      updatedAt:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  github_com_codescalersinternships_Secret-note-API-SPA-Mariam_mahrous_models.User:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      email:
+        type: string
+      id:
+        type: integer
+      password:
+        minLength: 8
+        type: string
+      token:
+        type: string
+      updatedAt:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  gorm.DeletedAt:
+    properties:
+      time:
+        type: string
+      valid:
+        description: Valid is true if Time is not NULL
+        type: boolean
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: A secret note api in go using Gin framework
+  title: Secret-Note API/SPA
+  version: "1.0"
+paths:
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Login --Authenticate a user and return a token.
+      parameters:
+      - description: User credentials
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_codescalersinternships_Secret-note-API-SPA-Mariam_mahrous_models.CreateUserInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successful login
+          schema:
+            $ref: '#/definitions/github_com_codescalersinternships_Secret-note-API-SPA-Mariam_mahrous_models.User'
+        "400":
+          description: Invalid input
+          schema:
+            $ref: '#/definitions/github_com_codescalersinternships_Secret-note-API-SPA-Mariam_mahrous_models.ErrorResponse'
+        "401":
+          description: Invalid email or password
+          schema:
+            $ref: '#/definitions/github_com_codescalersinternships_Secret-note-API-SPA-Mariam_mahrous_models.ErrorResponse'
+      summary: Log in a user
+      tags:
+      - users
+  /note:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all notes for the authenticated user.
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successful operation
+          schema:
+            items:
+              $ref: '#/definitions/github_com_codescalersinternships_Secret-note-API-SPA-Mariam_mahrous_models.Note'
+            type: array
+        "401":
+          description: Unauthorized access
+          schema:
+            $ref: '#/definitions/github_com_codescalersinternships_Secret-note-API-SPA-Mariam_mahrous_models.ErrorResponse'
+      summary: Get all notes for the authenticated user
+      tags:
+      - notes
+  /note/{uuid}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a note by its UUID.
+      parameters:
+      - description: Note UUID
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successful operation
+          schema:
+            $ref: '#/definitions/github_com_codescalersinternships_Secret-note-API-SPA-Mariam_mahrous_models.Note'
+        "400":
+          description: Invalid UUID format
+          schema:
+            $ref: '#/definitions/github_com_codescalersinternships_Secret-note-API-SPA-Mariam_mahrous_models.ErrorResponse'
+        "404":
+          description: Note not found
+          schema:
+            $ref: '#/definitions/github_com_codescalersinternships_Secret-note-API-SPA-Mariam_mahrous_models.ErrorResponse'
+      summary: Get note by UUID
+      tags:
+      - notes
+  /note/create:
+    post:
+      consumes:
+      - application/json
+      description: Create a new note for the authenticated user.
+      parameters:
+      - description: Note data
+        in: body
+        name: note
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_codescalersinternships_Secret-note-API-SPA-Mariam_mahrous_models.CreateNoteInput'
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Note created successfully
+          schema:
+            $ref: '#/definitions/github_com_codescalersinternships_Secret-note-API-SPA-Mariam_mahrous_models.Note'
+        "400":
+          description: Invalid input
+          schema:
+            $ref: '#/definitions/github_com_codescalersinternships_Secret-note-API-SPA-Mariam_mahrous_models.ErrorResponse'
+        "401":
+          description: Unauthorized access
+          schema:
+            $ref: '#/definitions/github_com_codescalersinternships_Secret-note-API-SPA-Mariam_mahrous_models.ErrorResponse'
+      summary: Create a new note
+      tags:
+      - notes
+  /signup:
+    post:
+      consumes:
+      - application/json
+      description: Sign Up --- Create a new user account.
+      parameters:
+      - description: User data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_codescalersinternships_Secret-note-API-SPA-Mariam_mahrous_models.CreateUserInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User created successfully
+          schema:
+            $ref: '#/definitions/github_com_codescalersinternships_Secret-note-API-SPA-Mariam_mahrous_models.User'
+        "400":
+          description: Invalid input
+          schema:
+            $ref: '#/definitions/github_com_codescalersinternships_Secret-note-API-SPA-Mariam_mahrous_models.ErrorResponse'
+        "409":
+          description: Can't create user
+          schema:
+            $ref: '#/definitions/github_com_codescalersinternships_Secret-note-API-SPA-Mariam_mahrous_models.ErrorResponse'
+      summary: Sign up a new user
+      tags:
+      - users
+swagger: "2.0"

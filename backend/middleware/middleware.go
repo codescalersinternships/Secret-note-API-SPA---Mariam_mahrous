@@ -16,12 +16,12 @@ import (
 
 type MW struct {
 	TokenKey string
-	DB database.DB
+	DB       database.DB
 }
 
-func (m *MW) CheckToken(Authorization []string) (*jwt.Token  , error){
-	if len(Authorization)!=2 {
-		return nil ,errors.New("Unathorized")
+func (m *MW) CheckToken(Authorization []string) (*jwt.Token, error) {
+	if len(Authorization) != 2 {
+		return nil, errors.New("Unathorized")
 	}
 
 	tokenString := Authorization[1]
@@ -35,15 +35,15 @@ func (m *MW) CheckToken(Authorization []string) (*jwt.Token  , error){
 	})
 
 	if err != nil {
-		return nil ,errors.New("Unathorized")
+		return nil, errors.New("Unathorized")
 	}
-	return token , nil
+	return token, nil
 }
 
 func (m *MW) RequireAuth(c *gin.Context) {
-	
+
 	Authorization := strings.Split(c.Request.Header["Authorization"][0], " ")
-	token , err :=m.CheckToken(Authorization)
+	token, err := m.CheckToken(Authorization)
 
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
@@ -80,19 +80,18 @@ func (m *MW) GenerateToken(user model.User) (string, int, error) {
 	return tokenString, 0, nil
 }
 
-func (m *MW) HashPassword(password string) (string ,int , error) {
+func (m *MW) HashPassword(password string) (string, int, error) {
 	hashedPassword, err := model.HashPassword(password)
 	if err != nil {
-		return  "",http.StatusConflict, errors.New("error hashing the password")
+		return "", http.StatusConflict, errors.New("error hashing the password")
 	}
-	return hashedPassword , 200 , nil
+	return hashedPassword, 200, nil
 }
 
-func (m *MW) CompareHashAndPassword(currentPassword , enteredPassword string) (int , error) {
+func (m *MW) CompareHashAndPassword(currentPassword, enteredPassword string) (int, error) {
 	err := bcrypt.CompareHashAndPassword([]byte(currentPassword), []byte(enteredPassword))
 	if err != nil {
-		return  http.StatusConflict, errors.New("invalid Password or email")
+		return http.StatusConflict, errors.New("invalid Password or email")
 	}
-	return 200 , nil
+	return 200, nil
 }
-
