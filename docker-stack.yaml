@@ -1,0 +1,51 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=123456 
+      - POSTGRES_DB=postgres
+    deploy:
+      replicas: 1
+
+  backend:
+    image: mimo199/secretnotebe:v1.0
+    ports:
+      - "8080:8080"  
+    environment:
+      - DATABASE="SQLITE"
+      - PORT=8080
+      - USER="postgres"
+      - PASSWORD="123456" 
+      - DBNAME="postgres"
+      - POSTGRESQL_PORT="5432"
+      - TOKEN_KEY=secret-key
+      - FRONTEND_URL=http://172.23.40.220:3000
+    depends_on:
+      - postgres
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+
+  frontend:
+    image: mimo199/secretnotefe:v1.0
+    environment:
+      - VITE_API_URL=http://172.23.40.220:8080
+    ports:
+      - "3000:80"
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 5
+        window: 120s
+
