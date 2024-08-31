@@ -9,7 +9,6 @@ run:
 
 docker:
 	docker build --tag secretnote-fe .
-	docker run secretnote-fe
 
 test:
 	npm run test:unit
