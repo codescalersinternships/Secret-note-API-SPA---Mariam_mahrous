@@ -3,6 +3,7 @@ services:
     db:
         image: postgres
         container_name: postgres-db
+        env_file: .env
         environment:
             - POSTGRES_PORT=${POSTGRESQL_PORT}
             - POSTGRES_USER=${USER}  
